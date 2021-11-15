@@ -1,0 +1,40 @@
+{{- if .Values.portalExtProperties.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+{{- if .Values.portalExtProperties.name }}
+  name: {{ .Values.portalExtProperties.name }}
+{{- else }}
+  name: {{ .Release.Name }}-portal-ext-properties
+{{- end }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm/app-name: {{ .Values.appName }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+{{- (.Files.Glob "files/portal-ext.properties").AsConfig | nindent 2 }}
+{{- end }}
+
+{{ if .Values.confElasticsearchConnector.enabled }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+{{- if .Values.confElasticsearchConnector.name }}
+  name: {{ .Values.confElasticsearchConnector.name }}
+{{- else }}
+  name: {{ .Release.Name }}-conf-elasticsearch-connector
+{{- end }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm/app-name: {{ .Values.appName }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+{{- $path := printf "files/%s/com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config" .Values.env }}
+{{- (.Files.Glob $path).AsConfig | nindent 2 }}
+{{- end }}

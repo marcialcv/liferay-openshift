@@ -1,0 +1,5 @@
+# Any instructions here will be appended to the end of the Dockerfile created by `createDockerfile`.
+
+USER root
+RUN chgrp -R 0 /opt/liferay && chmod -R g=u /opt/liferay
+RUN chgrp -R 0 /mnt/liferay && chmod -R g=u /mnt/liferay

@@ -1,0 +1,153 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm/app-name: {{ .Values.appName }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    environment: {{ .Values.env }}
+{{- if .Values.securityzone }}
+    securityzone: {{ .Values.securityzone }}
+{{- end }} 
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      helm/app-name: {{ .Values.appName }}
+      release: {{ .Release.Name }}
+  strategy:
+    type: {{ .Values.deploymentStrategy }}
+  template:
+    metadata:
+      labels:
+        helm/app-name: {{ .Values.appName }}
+        release: {{ .Release.Name }}
+        environment: {{ .Values.env }}
+{{- if .Values.securityzone }}
+        securityzone: {{ .Values.securityzone }}
+{{- end }}
+    spec:
+{{- if .Values.registrySecret }}
+      imagePullSecrets:
+      - name: {{ .Values.registrySecret }}
+{{- end }}
+      securityContext:
+        runAsNonRoot: true
+{{- if .Values.userUid }}
+        runAsUser: {{ .Values.userUid }}
+{{- end }}
+{{- if .Values.group }}
+        runAsGroup: {{ .Values.group }}
+{{- end }}
+{{- if .Values.fsGroup }}
+        fsGroup: {{ .Values.fsGroup }}
+{{- end }}
+{{- with .Values.extraInitContainers }}
+      initContainers:
+{{ toYaml . | indent 6 }}
+{{- end }}
+
+      containers:
+      - name: liferay
+        image: {{ .Values.registry }}/{{ .Values.image }}@{{ .Values.tag }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        env:
+{{- if .Values.env }}
+        - name: LIFERAY_WORKSPACE_ENVIRONMENT
+          value: {{ .Values.env }}
+{{- end }}
+{{- if .Values.extraEnv }}
+{{- with .Values.extraEnv }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- end }}
+        
+{{- if .Values.resources }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+{{- end }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.livenessProbePath }}
+            port: {{ .Values.service.internalPort }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.readinessProbePath }}
+            port: {{ .Values.service.internalPort }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8081
+          name: monitoring
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /opt/liferay/data
+          name: liferay-files
+{{- if .Values.confElasticsearchConnector.enabled }}
+        - name: {{ .Values.confElasticsearchConnector.name }}
+          mountPath: {{ .Values.confElasticsearchConnector.mountPath }}
+          subPath: {{ .Values.confElasticsearchConnector.subPath }}
+{{- end }}
+{{- if .Values.portalExtProperties.enabled }}
+        - name: {{ .Values.portalExtProperties.name }}
+          mountPath: {{ .Values.portalExtProperties.mountPath }}
+          subPath: {{ .Values.portalExtProperties.subPath }}
+{{- end }}
+{{- with .Values.extraVolumeMounts }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+
+      dnsPolicy: ClusterFirst
+{{- if .Values.securityzone }}
+      nodeSelector:
+        securityzone: {{ .Values.securityzone }}
+{{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+{{- if or ( hasKey .Values "extraVolumes" ) .Values.customConfigMap.enabled .Values.liferayFiles.enabled }}
+      volumes:
+{{- end }}
+{{- if and .Values.customConfigMap.enabled .Values.customConfigMap.mountAsVolume }}
+{{- if .Values.customConfigMap.name }}
+      - name: {{ .Values.customConfigMap.name }}-volume
+        configMap:
+          name: {{ .Values.customConfigMap.name }}
+{{- else }}
+      - name: {{ .Release.Name }}-custom-configmap-volume
+        configMap:
+          name: {{ .Release.Name }}-custom-configmap
+{{- end }}
+{{- end }}
+{{- if .Values.liferayFiles.enabled }}
+      - name: liferay-files
+        persistentVolumeClaim:
+          claimName: {{ .Values.liferayFiles.name }}
+{{- end }}
+{{- if .Values.confElasticsearchConnector.enabled }}
+      - name: conf-elasticsearch-connector
+        configMap:
+          name: conf-elasticsearch-connector
+          items:
+          - key: com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config
+            path: com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config
+{{- end }}
+{{- if .Values.portalExtProperties.enabled }}
+      - name: portal-ext-properties
+        configMap:
+          name: portal-ext-properties
+{{- end }}
+{{- with .Values.extraVolumes }}
+{{ toYaml . | indent 6 }}
+{{- end }}

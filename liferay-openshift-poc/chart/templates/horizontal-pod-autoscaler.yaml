@@ -1,0 +1,32 @@
+{{- if .Values.autoscaler.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm/app-name: {{ .Values.appName }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  minReplicas: {{ .Values.autoscaler.minReplicas }}
+  maxReplicas: {{ .Values.autoscaler.maxReplicas }}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}
+  metrics:
+  {{- if .Values.autoscaler.cpuThreshold }}
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: {{ .Values.autoscaler.cpuThreshold }}
+  {{- end }}
+  {{- if .Values.autoscaler.memoryThreshold }}
+  - type: Resource
+    resource:
+      name: memory
+      targetAverageUtilization: {{ .Values.autoscaler.memoryThreshold }}
+  {{- end }}
+{{- end }}

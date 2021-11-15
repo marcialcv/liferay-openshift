@@ -1,0 +1,21 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm/app-name: {{ .Values.appName }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      helm/app-name: {{ .Values.appName }}
+      release: {{ .Release.Name }}
+  endpoints:
+{{- with .Values.serviceMonitor.endpoints }}
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- end }}

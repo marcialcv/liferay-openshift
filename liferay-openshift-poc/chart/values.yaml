@@ -1,0 +1,92 @@
+env: local
+image: liferay-portal-7.4-ga4
+tag: sha256:cdd2dd23b6ea4f194513242bc0411f0e8a43358b009b4aa97000847c3552f2ac
+registry: image-registry.openshift-image-registry.svc:5000/liferay
+imagePullPolicy: IfNotPresent
+deploymentStrategy: RollingUpdate
+replicas: 1
+resources:
+  requests:
+    memory: "5Gi"
+    cpu: "4"
+  limits:
+    memory: "5Gi"
+    cpu: "4"
+appName: liferay
+
+extraEnv:
+  - name: LIFERAY_JVM_OPTS
+    value: -XX:NewRatio=2 -Xms3G -Xmx3G -XX:+UseG1GC -XX:+UseCompressedOops -XX:+DisableExplicitGC
+  - name: JAVA_VERSION
+    value: zulu8
+
+livenessProbePath: /web/guest/home
+readinessProbePath: /web/guest/home
+livenessProbe:
+  initialDelaySeconds: 240
+  periodSeconds: 10
+  failureThreshold: 3
+  timeoutSeconds: 5
+  successThreshold: 1
+readinessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
+  timeoutSeconds: 5
+  successThreshold: 1
+terminationGracePeriodSeconds: 10
+
+portalExtProperties:
+  enabled: true
+  mountAsVolume: true
+  mountPath: "/opt/liferay/portal-ext.properties"
+  subPath: "portal-ext.properties"
+  name: portal-ext-properties
+
+confElasticsearchConnector:
+  enabled: false
+  mountAsVolume: true
+  mountPath: "/opt/liferay/osgi/configs/com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config"
+  subPath: "com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config"
+  name: conf-elasticsearch-connector
+  
+liferayFiles:
+  enabled: true
+  name: liferay-pvc
+  storage: 1Gi
+
+autoscaler:
+  enabled: false
+  
+serviceMonitor:
+  enabled: true
+  endpoints:
+    - path: /metrics
+      targetPort: 8081
+      interval: 60s
+  
+customConfigMap:
+  enabled: false
+  mountAsVolume: false
+  readOnly: true
+ 
+extraInitContainers: {}
+  ## If you want to add init containers
+  # - name: echo
+  #   image: debian:slim
+  #   command:
+  #     - 'bash'
+  #   args:
+  #     - '-c'
+  #     - 'echo hello world'
+  
+service:
+  # name: service-name-overrided
+  host: liferay.openshift.com
+  externalPort: 8080
+  internalPort: 8080
+  extraPorts:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: monitoring

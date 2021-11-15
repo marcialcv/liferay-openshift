@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  annotations:
+    haproxy.router.openshift.io/balance: roundrobin
+    router.openshift.io/cookie_name: lfrstickysessioncookie
+  labels:
+    helm/app-name: {{ .Values.appName }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  rules:
+  - host: {{ .Values.service.host }}
+    http:
+     paths:
+     - path: /
+       backend:
+{{- if .Values.service.name }}
+         serviceName: {{ .Values.service.name }}
+{{- else }}
+         serviceName: {{ .Release.Name }}
+{{- end }}
+         servicePort: {{ .Values.service.externalPort }}

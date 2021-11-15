@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.service.name }}
+  name: {{ .Values.service.name }}
+{{- else }}
+  name: {{ .Release.Name }}
+{{- end }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm/app-name: {{ .Values.appName }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- if .Values.securityzone }}
+    securityzone: {{ .Values.securityzone }}
+{{- end }}
+spec:
+  selector:
+    helm/app-name: {{ .Values.appName }}
+{{- if .Values.securityzone }}
+    securityzone: {{ .Values.securityzone }}
+{{- end }}
+{{- if .Values.service.type }}
+  type: {{ .Values.service.type }}
+{{- end }}
+  ports:
+  - port: {{ .Values.service.externalPort }}
+    targetPort: {{ .Values.service.internalPort }}
+    protocol: TCP
+    name: {{ default "http" .Values.service.name }}
+  {{- with .Values.service.extraPorts }}
+{{ toYaml . | indent 2 }}
+  {{- end }}
+    
+  
+---
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.service.name }}
+  name: {{ .Values.service.name }}-cluster
+{{- else }}
+  name: {{ .Release.Name }}-cluster
+{{- end }}
+  labels:
+    helm/app-name: {{ .Values.appName }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- if .Values.securityzone }}
+    securityzone: {{ .Values.securityzone }}
+{{- end }}
+spec:
+  clusterIP: None
+  selector:
+    helm/app-name: {{ .Values.appName }}
+    {{- if .Values.securityzone }}
+    securityzone: {{ .Values.securityzone }}
+{{- end }}
+  ports:
+  - port: 7800
+    name: jgroupscl
+    protocol: TCP
+    targetPort: 7800
+  - port: 7900
+    name: jgroupstt
+    protocol: TCP
+    targetPort: 7900

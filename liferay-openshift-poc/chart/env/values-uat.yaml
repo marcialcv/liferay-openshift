@@ -1,0 +1,32 @@
+env: uat
+replicas: 2
+resources:
+  requests:
+    memory: "8Gi"
+    cpu: "4"
+  limits:
+    memory: "8Gi"
+    cpu: "4"
+
+extraEnv:
+  - name: LIFERAY_JVM_OPTS
+    value: -XX:NewRatio=2 -Xms6G -Xmx6G -XX:+UseG1GC -XX:+UseCompressedOops -XX:+DisableExplicitGC
+  - name: JAVA_VERSION
+    value: zulu8
+
+confElasticsearchConnector:
+  enabled: true
+  mountAsVolume: true
+  mountPath: "/opt/liferay/osgi/configs/com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config"
+  subPath: "com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config"
+  name: conf-elasticsearch-connector 
+
+autoscaler:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  cpuThreshold: 80
+  memoryThreshold: 90
+  
+service:
+  host: uat.liferay.openshift.com

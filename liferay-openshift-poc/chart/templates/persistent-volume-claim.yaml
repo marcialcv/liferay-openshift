@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    helm/app-name: {{ .Values.appName }}
+  name: {{ .Values.liferayFiles.name }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.liferayFiles.storage }}
