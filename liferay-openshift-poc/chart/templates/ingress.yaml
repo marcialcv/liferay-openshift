@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}-ingress
@@ -15,10 +15,13 @@ spec:
     http:
      paths:
      - path: /
+       pathType: Prefix
        backend:
+         service:
 {{- if .Values.service.name }}
-         serviceName: {{ .Values.service.name }}
+           name: {{ .Values.service.name }}
 {{- else }}
-         serviceName: {{ .Release.Name }}
+           name: {{ .Release.Name }}
 {{- end }}
-         servicePort: {{ .Values.service.externalPort }}
+           port:
+             number: {{ .Values.service.externalPort }}

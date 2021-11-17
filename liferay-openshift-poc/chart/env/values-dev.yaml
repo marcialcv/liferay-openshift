@@ -14,7 +14,7 @@ extraEnv:
   - name: JAVA_VERSION
     value: zulu8
   - name: LIFERAY_WEB_PERIOD_SERVER_PERIOD_DISPLAY_PERIOD_NODE
-    value: true
+    value: "true"
 
 confElasticsearchConnector:
   enabled: true

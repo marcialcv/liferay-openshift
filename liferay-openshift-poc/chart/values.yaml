@@ -1,6 +1,6 @@
 env: local
 image: liferay-portal-7.4-ga4
-tag: sha256:cdd2dd23b6ea4f194513242bc0411f0e8a43358b009b4aa97000847c3552f2ac
+tag: sha256:7f32fe2a3da9e5442dbd52306f6e251513657d6eb1a51bfbd13fc19c1afe49b5
 registry: image-registry.openshift-image-registry.svc:5000/liferay
 imagePullPolicy: IfNotPresent
 deploymentStrategy: RollingUpdate
